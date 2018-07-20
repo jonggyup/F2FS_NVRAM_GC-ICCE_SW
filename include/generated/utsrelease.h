@@ -1,0 +1,1 @@
+#define UTS_RELEASE "4.15.1NVRAM-GC+"

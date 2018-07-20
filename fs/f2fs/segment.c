@@ -19,12 +19,18 @@
 #include <linux/freezer.h>
 #include <linux/sched/signal.h>
 
+//Added by Jonggyu
+#include <linux/delay.h>
+//End
+
 #include "f2fs.h"
 #include "segment.h"
 #include "node.h"
 #include "gc.h"
 #include "trace.h"
 #include <trace/events/f2fs.h>
+
+
 
 #define __reverse_ffz(x) __reverse_ffs(~(x))
 
@@ -171,9 +177,9 @@ found:
 
 bool need_SSR(struct f2fs_sb_info *sbi)
 {
-	int node_secs = get_blocktype_secs(sbi, F2FS_DIRTY_NODES);
-	int dent_secs = get_blocktype_secs(sbi, F2FS_DIRTY_DENTS);
-	int imeta_secs = get_blocktype_secs(sbi, F2FS_DIRTY_IMETA);
+//	int node_secs = get_blocktype_secs(sbi, F2FS_DIRTY_NODES);
+//	int dent_secs = get_blocktype_secs(sbi, F2FS_DIRTY_DENTS);
+//	int imeta_secs = get_blocktype_secs(sbi, F2FS_DIRTY_IMETA);
 
 	//Modified by Jonggyu
 	//Disable SSR
@@ -2620,6 +2626,8 @@ static void do_write_page(struct f2fs_summary *sum, struct f2fs_io_info *fio)
 	int err;
 
 reallocate:
+	//Comment by Jonggyu
+	//In the below function, the old block is invalidated
 	allocate_data_block(fio->sbi, fio->page, fio->old_blkaddr,
 			&fio->new_blkaddr, sum, type, fio, true);
 
@@ -3902,3 +3910,14 @@ void destroy_segment_manager_caches(void)
 	kmem_cache_destroy(discard_entry_slab);
 	kmem_cache_destroy(inmem_entry_slab);
 }
+
+//Modified by Jonggyu
+void do_write_page_to_NVRAM(struct f2fs_sb_info *sbi, block_t blkaddr)
+{
+		if (GET_SEGNO(sbi, blkaddr) != NULL_SEGNO)
+					update_sit_entry(sbi, blkaddr, -1);
+		locate_dirty_segment(sbi, GET_SEGNO(sbi, blkaddr));
+		udelay(3);
+}
+//End
+

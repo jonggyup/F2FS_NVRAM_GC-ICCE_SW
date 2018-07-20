@@ -302,6 +302,11 @@ struct sit_entry_set {
 /*
  * inline functions
  */
+
+//Modified by Jonggyu
+void do_write_page_to_NVRAM(struct f2fs_sb_info *sbi, block_t blkaddr);
+
+//End
 static inline struct curseg_info *CURSEG_I(struct f2fs_sb_info *sbi, int type)
 {
 	return (struct curseg_info *)(SM_I(sbi)->curseg_array + type);

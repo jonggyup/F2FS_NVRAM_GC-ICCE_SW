@@ -710,6 +710,9 @@ static void move_data_page(struct inode *inode, block_t bidx, int gc_type,
 							unsigned int segno, int off)
 {
 	struct page *page;
+	struct dnode_of_data dn;
+	block_t old_blkaddr;
+	struct sit_info *sit_i = SIT_I(F2FS_I_SB(inode));
 
 	page = get_lock_data_page(inode, bidx, true);
 	if (IS_ERR(page))
@@ -752,8 +755,25 @@ retry:
 		}
 
 		set_cold_data(page);
+		
+		//Deleted by Jonggyu
+		//err = do_write_data_page(&fio);
 
-		err = do_write_data_page(&fio);
+		//Modified by Jonggyu
+		set_new_dnode(&dn, inode, NULL, NULL, 0);
+		if(fio.need_lock == LOCK_REQ && !f2fs_trylock_op (fio.sbi))
+				goto retry;
+		down_write(&sit_i->sentry_lock);
+		err = get_dnode_of_data(&dn, page->index, LOOKUP_NODE);
+		old_blkaddr = dn.data_blkaddr;
+		set_inode_flag(inode, FI_APPEND_WRITE);
+		f2fs_put_dnode(&dn);
+		do_write_page_to_NVRAM(fio.sbi, old_blkaddr);
+		up_write(&sit_i->sentry_lock);
+		if (fio.need_lock ==LOCK_REQ)
+			f2fs_unlock_op(fio.sbi);
+		//End
+
 		if (err == -ENOMEM && is_dirty) {
 			congestion_wait(BLK_RW_ASYNC, HZ/50);
 			goto retry;
